@@ -25,7 +25,7 @@ showMenu(2, List) ->
     logic:filterByDestination(List),
     showMenu(List);
 showMenu(3, List) ->
-    io:format("Not implemented~n"),
+    logic:getStats(List),
     showMenu(List);
 showMenu(4, List) ->
     NewList = logic:dispatchAll(List),

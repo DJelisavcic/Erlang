@@ -1,5 +1,5 @@
 -module(logic).
--export([viewAll/1, filterByDestination/1, dispatchAll/1]).
+-export([viewAll/1, filterByDestination/1, dispatchAll/1, getStats/1]).
 
 viewAll([]) ->
     io:format("~n");
@@ -58,3 +58,26 @@ dispatchAll([{Shipment,Id, Weight, Destination, Status}|Tail], Dispatched) when 
     dispatchAll(Tail, [NewHead|Dispatched]);
 dispatchAll([_Head|Tail], Dispatched) ->
     dispatchAll(Tail, [_Head|Dispatched]).
+
+ getStats(List) ->
+    calculateTotalPendingWeight(List, 0),
+    countShipmentsCurrentlyDelivered(List, 0).
+
+calculateTotalPendingWeight([], Sum) ->
+    io:format("Total sum of all pending shipments: ~p~n",[Sum]);
+calculateTotalPendingWeight([{_,Id, Weight, Destination, Status}|Tail], Sum) when Status == pending ->
+    if 
+        Weight >=0 -> 
+            calculateTotalPendingWeight(Tail, Sum + Weight);
+        Weight < 0 ->
+            error("Irregular Weight value in DB")
+    end;
+calculateTotalPendingWeight([_|Tail], Sum)->
+    calculateTotalPendingWeight(Tail, Sum).
+
+countShipmentsCurrentlyDelivered([], Count)->
+    io:format("Number of shipments being delivered: ~p~n",[Count]);
+countShipmentsCurrentlyDelivered([{_,Id, Weight, Destination, Status}|Tail], Count) when Status == delivered ->
+    countShipmentsCurrentlyDelivered(Tail, Count + 1);
+countShipmentsCurrentlyDelivered([_|Tail], Count) ->
+    countShipmentsCurrentlyDelivered(Tail, Count).
