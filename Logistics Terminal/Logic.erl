@@ -12,18 +12,19 @@ viewAll([Head|Tail]) ->
     io:format("Shipment Status: ~p~n",[Status]),
     viewAll(Tail).
 
+
 validCity(City)->
     lists:all(fun(C) -> 
         (C >= $A andalso C =< $Z) 
         orelse (C >= $a andalso C =< $z) 
-        orelse C == $ end, City
+        orelse C == $\s end, City
     ).
 
 filterByDestination(List)->
     City = string:trim(io:get_line("Enter city:")),
     case validCity(City) of
         true ->
-            filterByDestination(List,string:lowercase(City));
+            filterByDestination(List,string:to_lower(City));
         false ->
             io:format("Invalid city name. Use only alphabet letters~n"),
             filterByDestination(List)
@@ -33,7 +34,7 @@ filterByDestination(List)->
 filterByDestination([], _) ->
     io:format("~n");
 filterByDestination([{_,Id, Weight, Destination, Status}|Tail], DestinationFilter) ->
-    LowerCaseDestination = string:lowercase(Destination),
+    LowerCaseDestination = string:to_lower(Destination),
     case LowerCaseDestination == DestinationFilter of
         true ->
             io:format("--------------------------------------------------------------------~n"),
@@ -48,36 +49,39 @@ filterByDestination([{_,Id, Weight, Destination, Status}|Tail], DestinationFilte
 filterByDestination([_|Tail], DestinationFilter) ->
     filterByDestination(Tail, DestinationFilter).
 
+    
 
 dispatchAll(List)->
     dispatchAll(List, []).
+
 dispatchAll([], Dispatched)->
     lists:reverse(Dispatched);
 dispatchAll([{Shipment,Id, Weight, Destination, Status}|Tail], Dispatched) when Status == pending ->
     NewHead = {Shipment, Id, Weight, Destination, in_transit},
     dispatchAll(Tail, [NewHead|Dispatched]);
-dispatchAll([_Head|Tail], Dispatched) ->
-    dispatchAll(Tail, [_Head|Dispatched]).
+dispatchAll([Head|Tail], Dispatched) ->
+    dispatchAll(Tail, [Head|Dispatched]).
 
+ 
  getStats(List) ->
     calculateTotalPendingWeight(List, 0),
     countShipmentsCurrentlyDelivered(List, 0).
 
 calculateTotalPendingWeight([], Sum) ->
     io:format("Total sum of all pending shipments: ~p~n",[Sum]);
-calculateTotalPendingWeight([{_,Id, Weight, Destination, Status}|Tail], Sum) when Status == pending ->
+calculateTotalPendingWeight([{_,_, Weight, _, Status}|Tail], Sum) when Status == pending ->
     if 
         Weight >=0 -> 
             calculateTotalPendingWeight(Tail, Sum + Weight);
         Weight < 0 ->
-            error("Irregular Weight value in DB")
+            throw(irregular_weight)
     end;
 calculateTotalPendingWeight([_|Tail], Sum)->
     calculateTotalPendingWeight(Tail, Sum).
 
 countShipmentsCurrentlyDelivered([], Count)->
     io:format("Number of shipments being delivered: ~p~n",[Count]);
-countShipmentsCurrentlyDelivered([{_,Id, Weight, Destination, Status}|Tail], Count) when Status == delivered ->
+countShipmentsCurrentlyDelivered([{_,_,_,_, Status}|Tail], Count) when Status == delivered ->
     countShipmentsCurrentlyDelivered(Tail, Count + 1);
 countShipmentsCurrentlyDelivered([_|Tail], Count) ->
     countShipmentsCurrentlyDelivered(Tail, Count).

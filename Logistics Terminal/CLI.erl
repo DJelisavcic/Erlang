@@ -14,9 +14,13 @@ showMenu(List) ->
     io:format("4) Dispatch~n"),
     io:format("5) Exit~n"),
     
-    {ok, [Option]} = io:fread("", "~d"),
-    showMenu(Option, List).
-
+    case io:fread("", "~d") of
+    {ok, [Option]} ->
+        showMenu(Option, List);
+    {error, _} ->
+        io:format("Invalid input! Please enter a number.~n"),
+        showMenu(List)
+end.
 
 showMenu(1, List) ->
     logic:viewAll(List),
@@ -25,7 +29,11 @@ showMenu(2, List) ->
     logic:filterByDestination(List),
     showMenu(List);
 showMenu(3, List) ->
-    logic:getStats(List),
+    try logic:getStats(List)
+    catch
+        throw:irregular_weight ->
+            io:format("Error: Irregular weight value in DB~n")
+    end,
     showMenu(List);
 showMenu(4, List) ->
     NewList = logic:dispatchAll(List),

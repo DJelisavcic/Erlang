@@ -2,9 +2,9 @@
 -export([createDB/0]).
 
 createDB() ->
-    List = [
+    [
         %shipment, ID, Weight in Kg, Destination, Shipment status
-        {shipment, 1, 1230.7, "Belgrade", pending},
+        {shipment, 1, -3, "Belgrade", pending},
         {shipment, 2, 8200.2, "Novi Sad", in_transit},
         {shipment, 3, 15000.3, "Nis", delivered},
         {shipment, 4, 6700, "Kragujevac", pending},
