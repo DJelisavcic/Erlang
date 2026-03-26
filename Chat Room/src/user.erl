@@ -5,15 +5,16 @@ join(Username) ->
     spawn(fun() -> init(Username) end).
 
 init(Username) ->
-    server ! {join, Username, self()},
+    Ref = make_ref(),
+    server ! {join, Username, self(), Ref},
     loop(Username).
 
 loop(Username) ->
     receive
-        ack ->
+        {ack, Ref} ->
             loop(Username);
 
-        {error, Reason} ->
+        {error, Ref, Reason} ->
             io:format("Join failed for User ~s: ~s~n", [Username, Reason]);
 
         {info, User, Message} ->
@@ -25,8 +26,9 @@ loop(Username) ->
             loop(Username);
 
         {send, Message} ->
+            Ref = make_ref(),
             io:format("User ~s sends: \"~s\"~n", [Username, Message]),
-            server ! {send_message, self(), Username, Message},
+            server ! {send_message, self(), Username, Message, Ref},
             loop(Username);
 
         leave ->

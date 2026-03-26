@@ -15,30 +15,32 @@ init() ->
 
 loop(List) ->
     receive
-        {join, Username, Pid} ->
+        {join, Username, Pid, Ref} ->
             case check_if_user_exists(Username, List) of
                 true ->
-                    Pid ! {error, "Username already taken. Please choose another one."},
+                    Pid ! {error, Ref, "Username already taken. Please choose another one."},
                     loop(List);
                 false ->
                     io:format("User ~s joins.~n", [Username]),
                     link(Pid),
                     NewUser = #user{name = Username, pid = Pid},
                     notify_all(List, {info, Username, "has joined the room"}),
-                    Pid ! ack,
+                    Pid ! {ack, Ref},
                     loop([NewUser | List])
             end;
-        
-        {send_message, Pid, Username, Message} ->
+
+        {send_message, Pid, Username, Message, Ref} ->
             case check_if_user_exists(Username, List) of
                 true ->
                     notify_all(List, Pid, {message, Username, Message}),
+                    Pid ! {ack, Ref},
                     loop(List);
                 false ->
                     io:format("User ~s doesn't exist.~n", [Username]),
+                    Pid ! {error, Ref, "User doesn't exist."},
                     loop(List)
             end;
-        
+
         {leave, Pid} ->
             case remove_user_by_pid(Pid, List, []) of
                 {not_found, List} ->
@@ -63,7 +65,7 @@ loop(List) ->
 
 check_if_user_exists(_, []) ->
     false;
-check_if_user_exists(Username, [#user{name = Username}| _]) ->
+check_if_user_exists(Username, [#user{name = Username} | _]) ->
     true;
 check_if_user_exists(Username, [_ | Tail]) ->
     check_if_user_exists(Username, Tail).
