@@ -1,0 +1,44 @@
+-module(user).
+-export([join/1, send_message/2, leave/1]).
+
+join(Username) ->
+    spawn(fun() -> init(Username) end).
+
+init(Username) ->
+    Ref = make_ref(),
+    server ! {join, Username, self(), Ref},
+    loop(Username).
+
+loop(Username) ->
+    receive
+        {ack, Ref} ->
+            loop(Username);
+
+        {error, Ref, Reason} ->
+            io:format("Join failed for User ~s: ~s~n", [Username, Reason]);
+
+        {info, User, Message} ->
+            io:format("Server tells User ~s: \"User ~s ~s.\"~n", [Username, User, Message]),
+            loop(Username);
+
+        {message, _, Message} ->
+            io:format("Server sends \"~s\" to User ~s.~n", [Message, Username]),
+            loop(Username);
+
+        {send, Message} ->
+            Ref = make_ref(),
+            io:format("User ~s sends: \"~s\"~n", [Username, Message]),
+            server ! {send_message, self(), Username, Message, Ref},
+            loop(Username);
+
+        leave ->
+            io:format("User ~s crashes/exits.~n", [Username]),
+            server ! {leave, self()},
+            exit(normal)
+    end.
+
+send_message(Pid, Message) ->
+    Pid ! {send, Message}.
+
+leave(Pid) ->
+    Pid ! leave.
