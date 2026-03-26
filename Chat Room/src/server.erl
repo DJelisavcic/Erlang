@@ -21,6 +21,7 @@ loop(List) ->
                     Pid ! {error, "Username already taken. Please choose another one."},
                     loop(List);
                 false ->
+                    io:format("User ~s joins.~n", [Username]),
                     link(Pid),
                     NewUser = #user{name = Username, pid = Pid},
                     notify_all(List, {info, Username, "has joined the room"}),
@@ -34,6 +35,7 @@ loop(List) ->
                     notify_all(List, Pid, {message, Username, Message}),
                     loop(List);
                 false ->
+                    io:format("User ~s doesn't exist.~n", [Username]),
                     loop(List)
             end;
         

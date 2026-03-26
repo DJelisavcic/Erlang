@@ -5,7 +5,6 @@ join(Username) ->
     spawn(fun() -> init(Username) end).
 
 init(Username) ->
-    io:format("User ~s joins.~n", [Username]),
     server ! {join, Username, self()},
     loop(Username).
 
@@ -17,17 +16,17 @@ loop(Username) ->
         {error, Reason} ->
             io:format("Join failed for User ~s: ~s~n", [Username, Reason]);
 
-        {info, User, Text} ->
-            io:format("Server tells User ~s: \"User ~s ~s.\"~n", [Username, User, Text]),
+        {info, User, Message} ->
+            io:format("Server tells User ~s: \"User ~s ~s.\"~n", [Username, User, Message]),
             loop(Username);
 
-        {message, _, Text} ->
-            io:format("Server sends \"~s\" to User ~s.~n", [Text, Username]),
+        {message, _, Message} ->
+            io:format("Server sends \"~s\" to User ~s.~n", [Message, Username]),
             loop(Username);
 
-        {send, Text} ->
-            io:format("User ~s sends: \"~s\"~n", [Username, Text]),
-            server ! {send_message, self(), Username, Text},
+        {send, Message} ->
+            io:format("User ~s sends: \"~s\"~n", [Username, Message]),
+            server ! {send_message, self(), Username, Message},
             loop(Username);
 
         leave ->
@@ -36,8 +35,8 @@ loop(Username) ->
             exit(normal)
     end.
 
-send_message(Pid, Text) ->
-    Pid ! {send, Text}.
+send_message(Pid, Message) ->
+    Pid ! {send, Message}.
 
 leave(Pid) ->
     Pid ! leave.
